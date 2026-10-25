@@ -42,7 +42,7 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
         <div className="space-y-6 lg:col-span-3">
           <Card>
             <CardHeader
@@ -58,7 +58,7 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
             </CardBody>
           </Card>
 
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <Card>
               <CardHeader title="Company" actions={<Link href={`/companies/${company.id}`} className="text-sm text-blue-700 hover:underline">Open</Link>} />
               <CardBody>

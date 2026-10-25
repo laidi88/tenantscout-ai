@@ -2,11 +2,14 @@ import "server-only";
 import { connection } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
+import { isDemoMode } from "@/lib/demo/mode";
+import * as demo from "@/lib/demo/queries";
 import { toMatchCompany, toMatchProperty } from "@/lib/scoring/adapters";
 import { scoreMatch } from "@/lib/scoring/score";
 
 export async function listCompanies(filters: { q?: string } = {}) {
   await connection();
+  if (isDemoMode()) return demo.listCompanies(filters);
   const where: Prisma.TenantCompanyWhereInput = filters.q
     ? {
         OR: ["name", "industry", "currentCity"].map((field) => ({
@@ -33,6 +36,7 @@ export async function listCompanies(filters: { q?: string } = {}) {
 
 export async function getCompany(id: string) {
   await connection();
+  if (isDemoMode()) return demo.getCompany(id);
   return getDb().tenantCompany.findUnique({
     where: { id },
     include: {
@@ -48,6 +52,7 @@ export async function getCompany(id: string) {
 /** Scores this company against every available property, best first. */
 export async function getMatchingProperties(companyId: string, limit = 5) {
   await connection();
+  if (isDemoMode()) return demo.getMatchingProperties(companyId, limit);
   const db = getDb();
   const [company, properties] = await Promise.all([
     db.tenantCompany.findUniqueOrThrow({

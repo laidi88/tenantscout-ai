@@ -30,7 +30,17 @@ Missing preferences earn half points. **Generate matches** creates a lead when a
 
 Next.js 16 (App Router), TypeScript, Tailwind CSS 4, Prisma 7 and PostgreSQL on Railway. There is no local database: development uses a separate Railway database.
 
-## Local setup
+## Quick start: demo mode (no database)
+
+If `DATABASE_URL` is not set, the app runs in **Demo Mode**. It serves the fictional demo data from memory, and a "Demo Mode" banner appears on every page.
+
+1. `npm install`
+2. Make sure there is no `.env` file, or that it has no `DATABASE_URL`.
+3. `npm run dev` and open http://localhost:3000.
+
+Everything works in demo mode, including adding and editing records, generating matches, changing lead status and adding notes. Changes are kept in memory only and reset when the server restarts. Setting `DATABASE_URL` switches back to PostgreSQL with no code changes.
+
+## Local setup with a database
 
 1. `npm install`
 2. In Railway, create a **development** PostgreSQL database, separate from production. Copy its public connection URL.
@@ -50,15 +60,35 @@ Next.js 16 (App Router), TypeScript, Tailwind CSS 4, Prisma 7 and PostgreSQL on 
 | `npm run db:migrate` | Apply migrations to the database in `DATABASE_URL` |
 | `npm run db:migrate:dev` | Create a new migration after changing `prisma/schema.prisma` |
 | `npm run db:seed` | Load or refresh the demo data (safe to re-run; your own records are not touched) |
+| `npm run db:deploy` | What Railway runs before each release: migrations, then demo data only if the database is empty |
 
 ## Deploying to Railway
 
 1. Push this repository to GitHub.
 2. In Railway, create a project and add a **PostgreSQL** service.
-3. Add a service from the GitHub repository.
-4. In the app service's **Variables**, add `DATABASE_URL` with the value `${{Postgres.DATABASE_URL}}`. This uses Railway's private network.
+3. Add a service from the GitHub repository. If you deploy from a branch other than `main`, choose it under **Settings → Source**.
+4. In the app service's **Variables**, add `DATABASE_URL` with the value `${{Postgres.DATABASE_URL}}`. This uses Railway's private network. Without it the app falls back to Demo Mode, and the pre-deploy step fails on purpose so this can't happen silently.
 5. Under **Settings → Networking**, generate a public domain.
-6. Deploy. [`railway.json`](railway.json) runs `npm run build`, applies migrations with `npm run db:migrate` before each release, starts the app with `next start`, and checks `/api/health`.
-7. Load the demo data once. On your computer, temporarily set `DATABASE_URL` in `.env` to the production database's **public** URL (Postgres service → Connect → Public Network), run `npm run db:seed`, then switch `.env` back to the development database.
+6. Deploy. [`railway.json`](railway.json) handles the rest:
+   - **Build:** `npm run build`. This generates the Prisma client and builds Next.js, with no database needed.
+   - **Pre-deploy:** `npm run db:deploy`. This applies database migrations, then loads the fictional demo data, but **only if the database is empty**, so later deploys never overwrite your data. Set `SEED_DEMO_DATA=false` to start with an empty database instead.
+   - **Start:** `next start` on Railway's `PORT`.
+   - **Health check:** `/api/health`. It doesn't depend on the database.
+7. Open the public domain. You should see the dashboard with data and **no** "Demo Mode" banner.
 
 Every push to the connected branch redeploys automatically.
+
+### Environment variables
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `DATABASE_URL` | Yes | PostgreSQL connection string, e.g. `${{Postgres.DATABASE_URL}}` |
+| `SEED_DEMO_DATA` | No | Set to `false` to skip loading demo data into an empty database |
+
+Railway sets `PORT` and `NODE_ENV` automatically. Railway's builder picks the Node.js version from `engines.node` in `package.json` (Node 22 LTS or newer).
+
+### Troubleshooting
+
+- **Pre-deploy fails with `P1001: Can't reach database server`:** check that `DATABASE_URL` references the Postgres service (`${{Postgres.DATABASE_URL}}`) and that both services are in the same project and environment.
+- **Pre-deploy fails with `datasource.url property is required`:** `DATABASE_URL` isn't set on the app service.
+- **The site shows the "Demo Mode" banner:** the running service has no `DATABASE_URL`. Add it and redeploy.

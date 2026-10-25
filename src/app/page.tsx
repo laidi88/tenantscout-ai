@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { LeadStatusBadge, ScoreBadge } from "@/components/badges";
 import { SignalItem } from "@/components/signal-item";
 import { Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, StatTile } from "@/components/ui";
@@ -8,6 +9,7 @@ import { isOverdue } from "@/lib/data/leads";
 import { formatDate } from "@/lib/format";
 import { LEAD_STATUS_LABELS } from "@/lib/labels";
 import { GenerateMatchesButton } from "./leads/generate-button";
+import Loading from "./loading";
 
 const viewAll = (href: string) => (
   <Link href={href} className="text-sm text-blue-700 hover:underline">
@@ -15,10 +17,9 @@ const viewAll = (href: string) => (
   </Link>
 );
 
-export default async function DashboardPage() {
-  const { totals, topLeads, followUps, statusCounts, recentSignals } = await getDashboard();
-  const pipelineMax = Math.max(1, ...Object.values(statusCounts));
-
+// The header renders immediately; the data streams in behind the loading
+// skeleton, so navigating to the dashboard is instant.
+export default function DashboardPage() {
   return (
     <>
       <PageHeader
@@ -26,7 +27,19 @@ export default async function DashboardPage() {
         description="The most promising tenant opportunities, ranked by transparent match scores."
         actions={<GenerateMatchesButton variant="secondary" />}
       />
+      <Suspense fallback={<Loading />}>
+        <DashboardContent />
+      </Suspense>
+    </>
+  );
+}
 
+async function DashboardContent() {
+  const { totals, topLeads, followUps, statusCounts, recentSignals } = await getDashboard();
+  const pipelineMax = Math.max(1, ...Object.values(statusCounts));
+
+  return (
+    <>
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile label="Available properties" value={totals.availableProperties} />
         <StatTile label="Companies tracked" value={totals.companies} />
@@ -37,7 +50,7 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
         <Card className="lg:col-span-3">
           <CardHeader title="Top opportunities" actions={viewAll("/leads")} />
           <CardBody>

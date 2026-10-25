@@ -1,6 +1,8 @@
 import "server-only";
 import { connection } from "next/server";
 import { getDb } from "@/lib/db";
+import { isDemoMode } from "@/lib/demo/mode";
+import * as demo from "@/lib/demo/queries";
 import { startOfTodayUtc } from "@/lib/format";
 import { CLOSED_LEAD_STATUSES } from "@/lib/labels";
 
@@ -8,6 +10,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export async function getDashboard() {
   await connection();
+  if (isDemoMode()) return demo.getDashboard();
   const db = getDb();
   const today = startOfTodayUtc();
   const weekAhead = new Date(today.getTime() + 7 * DAY_MS);

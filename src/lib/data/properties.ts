@@ -3,6 +3,8 @@ import { connection } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import type { PropertyStatus, PropertyType } from "@/generated/prisma/enums";
 import { getDb } from "@/lib/db";
+import { isDemoMode } from "@/lib/demo/mode";
+import * as demo from "@/lib/demo/queries";
 import { toMatchCompany, toMatchProperty } from "@/lib/scoring/adapters";
 import { scoreMatch } from "@/lib/scoring/score";
 
@@ -17,6 +19,7 @@ export type PropertyFilters = {
 
 export async function listProperties(filters: PropertyFilters = {}) {
   await connection();
+  if (isDemoMode()) return demo.listProperties(filters);
   const where: Prisma.PropertyWhereInput = {};
   if (filters.q) {
     where.OR = ["name", "addressLine", "city", "submarket"].map((field) => ({
@@ -36,6 +39,7 @@ export async function listProperties(filters: PropertyFilters = {}) {
 
 export async function getProperty(id: string) {
   await connection();
+  if (isDemoMode()) return demo.getProperty(id);
   return getDb().property.findUnique({
     where: { id },
     include: {
@@ -47,6 +51,7 @@ export async function getProperty(id: string) {
 /** Scores every company against this property, best first. */
 export async function getMatchingCompanies(propertyId: string, limit = 5) {
   await connection();
+  if (isDemoMode()) return demo.getMatchingCompanies(propertyId, limit);
   const db = getDb();
   const [property, companies] = await Promise.all([
     db.property.findUniqueOrThrow({ where: { id: propertyId } }),
