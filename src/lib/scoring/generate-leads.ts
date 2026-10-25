@@ -1,4 +1,4 @@
-import "server-only";
+import type { PrismaClient } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
 import { toMatchCompany, toMatchProperty } from "./adapters";
 import { isLeadWorthy, scoreAllPairs } from "./matching";
@@ -14,10 +14,12 @@ export type GenerateLeadsSummary = {
  * - Existing leads get a fresh score and breakdown; their status, follow-up
  *   date and notes are never changed.
  * - New leads are created only for pairs at or above the score threshold.
+ * Not marked server-only so the seed script can call it with its own client.
  */
-export async function generateLeads(now: Date = new Date()): Promise<GenerateLeadsSummary> {
-  const db = getDb();
-
+export async function generateLeads(
+  now: Date = new Date(),
+  db: PrismaClient = getDb(),
+): Promise<GenerateLeadsSummary> {
   const [companies, properties, existing] = await Promise.all([
     db.tenantCompany.findMany({
       include: { signals: { select: { observedAt: true, strength: true } } },

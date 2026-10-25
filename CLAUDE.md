@@ -27,6 +27,9 @@ A responsive web application for commercial real estate tenant prospecting.
 - Units: areas in m², rents in €/m²/month.
 - Matching scores live in `src/lib/scoring/` (weights in `config.ts`). Keep scoring pure and covered by `npm test`.
 - Create migrations with `npm run db:migrate:dev` against the Railway development database; Railway runs `npm run db:migrate` before each deploy.
+- Data-loading functions live in `src/lib/data/` and call `await connection()` first, so pages render per request and the build never needs a database.
+- Demo data is in `prisma/seed-data.ts` (fixed `demo-*` IDs, `example.com` source URLs, invented names and places); `npm run db:seed` loads it.
+- Research and CRM extension points are in `src/lib/integrations/` (see `docs/integrations.md`). Only manual signals exist; keep interface wording honest about that.
 
 ## Workflow
 

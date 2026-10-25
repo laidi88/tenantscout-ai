@@ -45,14 +45,15 @@ export const SCORING_RULES = {
   additionalSignalBonus: 0.15,
 } as const;
 
-// Property types that can partly satisfy each other.
+// Property types that can partly satisfy each other. Lab space is specialised,
+// so it is not treated as related to anything.
 export const RELATED_TYPES: Record<string, string[]> = {
-  OFFICE: ["MIXED_USE", "LAB"],
+  OFFICE: ["MIXED_USE"],
   MIXED_USE: ["OFFICE", "RETAIL"],
   RETAIL: ["MIXED_USE"],
   INDUSTRIAL: ["LOGISTICS"],
   LOGISTICS: ["INDUSTRIAL"],
-  LAB: ["OFFICE"],
+  LAB: [],
 };
 
 // Score bands shown in the interface.
@@ -68,4 +69,4 @@ export const LEAD_SCORE_THRESHOLD = 40;
 
 // Deal-breakers: a pair only becomes a lead if each of these scores above zero,
 // however well the other criteria fit.
-export const LEAD_REQUIRED_CRITERIA: CriterionKey[] = ["location", "propertyType"];
+export const LEAD_REQUIRED_CRITERIA: CriterionKey[] = ["size", "location", "propertyType"];

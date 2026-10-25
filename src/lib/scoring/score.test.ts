@@ -190,6 +190,22 @@ describe("scoreAllPairs", () => {
     expect(isLeadWorthy(wrongType)).toBe(false);
   });
 
+  it("never makes a lead from a far-too-small property", () => {
+    const [tooSmall] = scoreAllPairs(
+      [{ ...company, id: "c1", signals: [{ observedAt: daysAgo(10), strength: "HIGH" }] }],
+      [{ ...property, id: "p1", totalAreaSqm: 350, minDivisibleAreaSqm: null }],
+      NOW,
+    );
+    expect(tooSmall.breakdown.total).toBeGreaterThanOrEqual(LEAD_SCORE_THRESHOLD);
+    expect(isLeadWorthy(tooSmall)).toBe(false);
+  });
+
+  it("does not treat lab space as related to office space", () => {
+    const labSeeker = { ...company, preferredPropertyTypes: ["LAB"] };
+    const result = scoreMatch(labSeeker, property, [], NOW);
+    expect(pointsFor("propertyType", result)).toBe(0);
+  });
+
   it("does not make a lead below the score threshold", () => {
     const [low] = scoreAllPairs(
       [{ ...company, id: "c1", signals: [] }],
