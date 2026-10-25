@@ -1,0 +1,176 @@
+// TenantScout AI data model.
+// Units: areas in square metres (m²), rents in euros per m² per month (€/m²/month).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PropertyType {
+  OFFICE
+  RETAIL
+  INDUSTRIAL
+  LOGISTICS
+  LAB
+  MIXED_USE
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  UNDER_OFFER
+  LET
+  ARCHIVED
+}
+
+enum SignalType {
+  EXPANSION
+  RELOCATION
+  FUNDING
+  HIRING
+  LEASE_EXPIRY
+  NEW_OFFICE
+  OTHER
+}
+
+enum SignalStrength {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// Where a signal came from. Only MANUAL is used today; IMPORT and AUTOMATED
+// are reserved for future integrations and must not be shown as active.
+enum SignalOrigin {
+  MANUAL
+  IMPORT
+  AUTOMATED
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  VIEWING
+  NEGOTIATION
+  WON
+  LOST
+}
+
+model Property {
+  id                    String         @id @default(cuid())
+  name                  String
+  addressLine           String
+  city                  String
+  submarket             String?
+  propertyType          PropertyType
+  totalAreaSqm          Int
+  minDivisibleAreaSqm   Int?
+  askingRentEurSqmMonth Decimal?       @db.Decimal(8, 2)
+  availableFrom         DateTime?
+  features              String[]
+  description           String?
+  status                PropertyStatus @default(AVAILABLE)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  leads Lead[]
+
+  @@index([status])
+  @@index([city])
+}
+
+model TenantCompany {
+  id                     String         @id @default(cuid())
+  name                   String
+  industry               String
+  description            String?
+  website                String?
+  currentCity            String?
+  headcount              Int?
+  currentAreaSqm         Int?
+  requiredAreaMinSqm     Int?
+  requiredAreaMaxSqm     Int?
+  preferredCities        String[]
+  preferredSubmarkets    String[]
+  preferredPropertyTypes PropertyType[]
+  maxRentEurSqmMonth     Decimal?       @db.Decimal(8, 2)
+  targetMoveDate         DateTime?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  // Reserved for a future CRM integration.
+  externalId     String?
+  externalSource String?
+  lastSyncedAt   DateTime?
+
+  signals Signal[]
+  leads   Lead[]
+
+  @@unique([externalSource, externalId])
+}
+
+model Signal {
+  id         String         @id @default(cuid())
+  companyId  String
+  type       SignalType
+  title      String
+  summary    String?
+  sourceUrl  String
+  sourceName String?
+  observedAt DateTime
+  strength   SignalStrength @default(MEDIUM)
+  origin     SignalOrigin   @default(MANUAL)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  company TenantCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([observedAt])
+}
+
+model Lead {
+  id             String     @id @default(cuid())
+  companyId      String
+  propertyId     String
+  score          Int
+  // ScoreBreakdown from src/lib/scoring: one entry per criterion with points and reason.
+  scoreBreakdown Json
+  scoredAt       DateTime
+  status         LeadStatus @default(NEW)
+  followUpDate   DateTime?
+  ownerName      String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  // Reserved for a future CRM integration.
+  externalId     String?
+  externalSource String?
+  lastSyncedAt   DateTime?
+
+  company  TenantCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  property Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  notes    Note[]
+
+  @@unique([companyId, propertyId])
+  @@unique([externalSource, externalId])
+  @@index([score])
+  @@index([status])
+  @@index([followUpDate])
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  leadId    String
+  body      String
+  author    String?
+  createdAt DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+}
