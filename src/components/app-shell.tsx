@@ -72,6 +72,28 @@ function DemoNotice() {
   );
 }
 
+const FOOTER_PARTS = ["TenantScout AI", "Commercial Real Estate Prospecting", "Demo Application © 2026"];
+
+// Separators show on wider screens; on phones each part sits on its own line.
+function Footer() {
+  return (
+    <footer className="border-t border-slate-200 bg-white">
+      <p className="mx-auto flex max-w-6xl flex-col items-center gap-1 px-4 py-4 text-center text-xs text-slate-500 sm:flex-row sm:justify-center sm:gap-2 sm:px-6 lg:px-8">
+        {FOOTER_PARTS.map((part, i) => (
+          <span key={part} className="flex items-center gap-2">
+            {i > 0 && (
+              <span className="hidden text-slate-300 sm:inline" aria-hidden>
+                |
+              </span>
+            )}
+            <span className={i === 0 ? "font-medium text-slate-700" : undefined}>{part}</span>
+          </span>
+        ))}
+      </p>
+    </footer>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
 
@@ -125,6 +147,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
 
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
+        <Footer />
       </div>
     </div>
   );
