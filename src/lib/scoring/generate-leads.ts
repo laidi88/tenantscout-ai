@@ -1,6 +1,7 @@
 import "server-only";
 import { getDb } from "@/lib/db";
-import { isLeadWorthy, scoreAllPairs, type MatchCompany, type MatchProperty } from "./matching";
+import { toMatchCompany, toMatchProperty } from "./adapters";
+import { isLeadWorthy, scoreAllPairs } from "./matching";
 
 export type GenerateLeadsSummary = {
   pairsScored: number;
@@ -25,17 +26,8 @@ export async function generateLeads(now: Date = new Date()): Promise<GenerateLea
     db.lead.findMany({ select: { companyId: true, propertyId: true } }),
   ]);
 
-  const matchCompanies: MatchCompany[] = companies.map((c) => ({
-    ...c,
-    maxRentEurSqmMonth: c.maxRentEurSqmMonth?.toNumber() ?? null,
-  }));
-  const matchProperties: MatchProperty[] = properties.map((p) => ({
-    ...p,
-    askingRentEurSqmMonth: p.askingRentEurSqmMonth?.toNumber() ?? null,
-  }));
-
   const existingKeys = new Set(existing.map((l) => `${l.companyId}:${l.propertyId}`));
-  const results = scoreAllPairs(matchCompanies, matchProperties, now);
+  const results = scoreAllPairs(companies.map(toMatchCompany), properties.map(toMatchProperty), now);
 
   let leadsCreated = 0;
   let leadsRescored = 0;
