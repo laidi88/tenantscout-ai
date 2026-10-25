@@ -94,7 +94,7 @@ function Footer() {
   );
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, banner }: { children: ReactNode; banner?: ReactNode }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -146,6 +146,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         )}
 
+        {banner}
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
         <Footer />
       </div>

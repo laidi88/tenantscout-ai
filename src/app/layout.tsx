@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
+import { DemoModeBanner } from "@/components/demo-mode-banner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,7 +27,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AppShell>{children}</AppShell>
+        <AppShell
+          banner={
+            <Suspense fallback={null}>
+              <DemoModeBanner />
+            </Suspense>
+          }
+        >
+          {children}
+        </AppShell>
       </body>
     </html>
   );

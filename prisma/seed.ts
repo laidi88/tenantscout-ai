@@ -1,6 +1,10 @@
 // Loads the fictional demo data into the database in DATABASE_URL.
 // Run with `npm run db:seed`. Safe to run more than once: demo records use
 // fixed IDs and are refreshed in place; records you created yourself are not touched.
+//
+// With --if-empty (used on every Railway deploy) it only seeds a database that
+// has no properties and no companies yet, so later deploys never overwrite
+// anything. Set SEED_DEMO_DATA=false to skip it entirely.
 
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -17,6 +21,21 @@ async function main() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL is not set. See .env.example.");
   const db = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
+
+  if (process.argv.includes("--if-empty")) {
+    if (process.env.SEED_DEMO_DATA === "false") {
+      console.log("Demo data: skipped (SEED_DEMO_DATA=false).");
+      await db.$disconnect();
+      return;
+    }
+    const [properties, companies] = await Promise.all([db.property.count(), db.tenantCompany.count()]);
+    if (properties + companies > 0) {
+      console.log("Demo data: skipped (database already has data).");
+      await db.$disconnect();
+      return;
+    }
+    console.log("Demo data: empty database, loading fictional demo data.");
+  }
 
   const now = new Date();
   const today = startOfTodayUtc(now);

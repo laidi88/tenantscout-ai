@@ -3,6 +3,8 @@ import { connection } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import type { LeadStatus } from "@/generated/prisma/enums";
 import { getDb } from "@/lib/db";
+import { isDemoMode } from "@/lib/demo/mode";
+import * as demo from "@/lib/demo/queries";
 import { startOfTodayUtc } from "@/lib/format";
 import { CLOSED_LEAD_STATUSES } from "@/lib/labels";
 import type { ScoreBreakdown } from "@/lib/scoring/score";
@@ -18,6 +20,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export async function listLeads(filters: LeadFilters = {}) {
   await connection();
+  if (isDemoMode()) return demo.listLeads(filters);
   const where: Prisma.LeadWhereInput = {};
   if (!filters.status || filters.status === "ACTIVE") where.status = { notIn: CLOSED_LEAD_STATUSES };
   else if (filters.status !== "ALL") where.status = filters.status;
@@ -46,6 +49,7 @@ export async function listLeads(filters: LeadFilters = {}) {
 
 export async function getLead(id: string) {
   await connection();
+  if (isDemoMode()) return demo.getLead(id);
   const lead = await getDb().lead.findUnique({
     where: { id },
     include: {
